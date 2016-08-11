@@ -56,6 +56,21 @@ public class SDLActivity extends Activity {
     // Audio
     protected static AudioTrack mAudioTrack;
 
+
+    private static long lastTimestamp = 0;
+    private static final Object lastTimestampLock = new Object();
+    public static void elapsedMillis() {
+      long elapsed = 0;
+      synchronized(lastTimestampLock) {
+        long now = System.currentTimeMillis();
+        if (lastTimestamp != 0) {
+          elapsed = System.currentTimeMillis() - lastTimestamp;
+        }
+        lastTimestamp = now;
+      }
+      return elapsed;
+    }
+
     // Load the .so
     static {
         System.loadLibrary("SDL2");
@@ -90,6 +105,7 @@ public class SDLActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.v("SDL", "onCreate():" + mSingleton);
+        Log.v("SDL", "onCreate(): elapsed: " + elapsedMillis() + " ms");
         super.onCreate(savedInstanceState);
         
         SDLActivity.initialize();
@@ -528,6 +544,7 @@ class SDLMain implements Runnable {
     @Override
     public void run() {
         // Runs SDL_main()
+        Log.v("SDL", "SDL_Main / nativeInit: elapsed: " + SDLActivity.elapsedMillis() + " ms");
         SDLActivity.nativeInit();
 
         //Log.v("SDL", "SDL thread terminated");
@@ -582,6 +599,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v("SDL", "surfaceCreated()");
+        Log.v("SDL", "surfaceCreated(): elapsed: " + SDLActivity.elapsedMillis() + " ms");
         holder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
     }
 
@@ -589,6 +607,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.v("SDL", "surfaceDestroyed()");
+        Log.v("SDL", "surfaceDestroyed(): elapsed: " + SDLActivity.elapsedMillis() + " ms");
         // Call this *before* setting mIsSurfaceReady to 'false'
         SDLActivity.handlePause();
         SDLActivity.mIsSurfaceReady = false;
@@ -600,6 +619,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
     public void surfaceChanged(SurfaceHolder holder,
                                int format, int width, int height) {
         Log.v("SDL", "surfaceChanged()");
+        Log.v("SDL", "surfaceChanged(): elapsed: " + SDLActivity.elapsedMillis() + " ms");
         // FPLBase Modification:
         // Do not start the native thread if we are in the process of exiting.
         if (SDLActivity.mExiting) return;
